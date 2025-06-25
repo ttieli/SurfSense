@@ -876,5 +876,8 @@ def delete_all_related_data(search_space_id: int, data: DocumentsToDelete, db: S
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(app, ws="wsproto", host="127.0.0.1", port=8000)
+    
+    # 从环境变量读取端口，默认为8000
+    PORT = int(os.environ.get("PORT", 8000))
+    
+    uvicorn.run(app, ws="wsproto", host="0.0.0.0", port=PORT)

@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database - 使用支持ARM64的镜像
+  db:
+    image: postgres:15-alpine
+    platform: linux/arm64
+    environment:
+      POSTGRES_USER: surfsense_user
+      POSTGRES_PASSWORD: surfsense_m1_password_2024
+      POSTGRES_DB: surfsense_db
+    volumes:
+      - postgres_data_m1:/var/lib/postgresql/data
+    ports:
+      - "5467:5432"  # 使用非常用端口
+    networks:
+      - surfsense-network-m1
+    restart: unless-stopped
+
+  # Backend Service (FastAPI) - 支持ARM64
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.m1
+      platforms:
+        - linux/arm64
+    ports:
+      - "8067:8067"  # 使用非常用端口
+    environment:
+      - DATABASE_URL=postgresql://surfsense_user:surfsense_m1_password_2024@db:5432/surfsense_db
+      - PORT=8067
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    networks:
+      - surfsense-network-m1
+    restart: unless-stopped
+
+  # Frontend Service - 支持ARM64
+  frontend:
+    build:
+      context: ./SurfSense-Frontend
+      dockerfile: Dockerfile.m1
+      platforms:
+        - linux/arm64
+    ports:
+      - "3087:3087"  # 使用非常用端口
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8067
+      - PORT=3087
+    env_file:
+      - ./SurfSense-Frontend/.env
+    networks:
+      - surfsense-network-m1
+    restart: unless-stopped
+
+# Volumes for persistent storage
+volumes:
+  postgres_data_m1:
+
+# Docker network
+networks:
+  surfsense-network-m1:
+    driver: bridge
