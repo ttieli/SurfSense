@@ -1,0 +1,32 @@
+# 使用支持ARM64的Python镜像
+FROM --platform=linux/arm64 python:3.12-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖 - 针对ARM64优化
+RUN apt-get update && \
+    apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    libffi-dev \
+    libssl-dev \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制requirements文件
+COPY requirements.txt /app/
+
+# 升级pip并安装Python依赖
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 复制后端源代码
+COPY . /app
+
+# 暴露端口
+EXPOSE 8067
+
+# 运行FastAPI应用
+CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8067", "--reload"]
